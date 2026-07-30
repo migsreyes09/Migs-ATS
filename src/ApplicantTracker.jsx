@@ -30,7 +30,7 @@ function loadId() {
 
 const EMPTY_FORM = { name: "", email: "", phone: "", linkedin: "", resume: "", position: "", stage: "Applied", notes: "", date: "" };
 
-export default function ApplicantTracker() {
+export default function ApplicantTracker({ onLogout, onChangePassword }) {
   const [applicants, setApplicants] = useState(load);
   const [nextId, setNextId] = useState(loadId);
   const [view, setView] = useState("table");
@@ -123,6 +123,16 @@ export default function ApplicantTracker() {
             <button onClick={openAdd} style={{ background: "white", color: "#0a66c2", border: "none", borderRadius: 8, padding: "9px 18px", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
               + Add Applicant
             </button>
+            {onChangePassword && (
+              <button onClick={onChangePassword} style={{ background: "rgba(255,255,255,0.15)", color: "white", border: "1px solid rgba(255,255,255,0.35)", borderRadius: 8, padding: "9px 14px", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
+                🔑 Password
+              </button>
+            )}
+            {onLogout && (
+              <button onClick={onLogout} style={{ background: "rgba(255,255,255,0.15)", color: "white", border: "1px solid rgba(255,255,255,0.35)", borderRadius: 8, padding: "9px 14px", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
+                Log out
+              </button>
+            )}
           </div>
         </div>
       </div>

@@ -1,16 +1,50 @@
-# React + Vite
+# Applicant Tracker (ATS)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Password-protected applicant tracking app deployed on [Vercel](https://migs-ats.vercel.app/).
 
-Currently, two official plugins are available:
+## Password protection
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+The ATS shows a login screen before you can view applicants. Sessions last 7 days via a secure cookie.
 
-## React Compiler
+## One-time Vercel setup
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+In your [Vercel project → Settings → Environment Variables](https://vercel.com), add:
 
-## Expanding the ESLint configuration
+| Variable | Required | Purpose |
+|----------|----------|---------|
+| `ATS_PASSWORD` | Yes | The password used to unlock the ATS |
+| `ATS_SESSION_SECRET` | Yes | Random string used to sign login sessions |
+| `VERCEL_TOKEN` | For change-password | [Vercel API token](https://vercel.com/account/settings/tokens) so the app can update the password and redeploy |
+| `VERCEL_PROJECT_ID` | For change-password | Found in Project Settings → General |
+| `VERCEL_TEAM_ID` | Optional | Only if the project is under a team |
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+After adding variables, redeploy once from the Vercel dashboard.
+
+### Creating a Vercel API token
+
+1. Go to [vercel.com/account/settings/tokens](https://vercel.com/account/settings/tokens)
+2. Create a token with access to your project
+3. Paste it as `VERCEL_TOKEN` in environment variables
+
+## Change password (in-app)
+
+Once logged in, click **Password** in the header. Enter your current and new password. The app will:
+
+1. Update `ATS_PASSWORD` in Vercel
+2. Trigger a production redeploy so the new password is live everywhere
+
+Redeploy usually takes about a minute.
+
+## Local development
+
+```bash
+npm install
+npm run dev          # UI only — login API won't work
+npm run dev:vercel   # Full app with login (requires vercel CLI + .env)
+```
+
+Copy `.env.example` to `.env` and fill in values for local testing with `vercel dev`.
+
+## Deploy
+
+Push to GitHub — Vercel auto-deploys on each push.

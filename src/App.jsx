@@ -1,5 +1,5 @@
-import ApplicantTracker from "./ApplicantTracker";
+import LoginGate from "./LoginGate";
 
 export default function App() {
-  return <ApplicantTracker />;
+  return <LoginGate />;
 }

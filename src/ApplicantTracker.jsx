@@ -1,7 +1,14 @@
 import { useState, useEffect } from "react";
+import { createClient } from "@supabase/supabase-js";
+
+// ==========================================
+// 🔐 SUPABASE CONFIG
+const SUPABASE_URL = "https://gzfybpajpuemigzqymbp.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd6ZnlicGFqcHVlbWlnenF5bWJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzOTgwMDQsImV4cCI6MjEwMDk3NDAwNH0.bD3nZnW_IWoekydhRWb2U309bysYOeJST-M80oZBFfA";
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// ==========================================
 
 const STAGES = ["Applied", "Screening", "Interview", "Offer Sent", "Hired", "Rejected"];
-
 const STAGE_STYLES = {
   "Applied":    { bg: "#eff6ff", border: "#bfdbfe", badge: "#3b82f6", text: "#1e3a8a" },
   "Screening":  { bg: "#faf5ff", border: "#e9d5ff", badge: "#8b5cf6", text: "#4c1d95" },
@@ -20,17 +27,201 @@ const SAMPLE = [
 
 const STORAGE_KEY = "ats_applicants";
 const STORAGE_ID_KEY = "ats_next_id";
-
-function load() {
-  try { const s = localStorage.getItem(STORAGE_KEY); return s ? JSON.parse(s) : SAMPLE; } catch { return SAMPLE; }
-}
-function loadId() {
-  try { const s = localStorage.getItem(STORAGE_ID_KEY); return s ? parseInt(s) : SAMPLE.length + 1; } catch { return SAMPLE.length + 1; }
-}
-
+function load() { try { const s = localStorage.getItem(STORAGE_KEY); return s ? JSON.parse(s) : SAMPLE; } catch { return SAMPLE; } }
+function loadId() { try { const s = localStorage.getItem(STORAGE_ID_KEY); return s ? parseInt(s) : SAMPLE.length + 1; } catch { return SAMPLE.length + 1; } }
 const EMPTY_FORM = { name: "", email: "", phone: "", linkedin: "", resume: "", position: "", stage: "Applied", notes: "", date: "" };
 
-export default function ApplicantTracker({ onLogout, onChangePassword }) {
+// ==========================================
+// 🔐 LOGIN SCREEN
+// ==========================================
+function LoginScreen({ onLogin }) {
+  const [mode, setMode] = useState("login"); // login | forgot | reset_sent
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [show, setShow] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [shake, setShake] = useState(false);
+
+  const triggerShake = () => { setShake(true); setTimeout(() => setShake(false), 600); };
+
+  const handleLogin = async () => {
+    if (!email || !password) { setError("Please enter your email and password."); triggerShake(); return; }
+    setLoading(true); setError("");
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    setLoading(false);
+    if (error) { setError("Incorrect email or password. Please try again."); triggerShake(); }
+    else onLogin();
+  };
+
+  const handleForgot = async () => {
+    if (!email) { setError("Please enter your email address first."); triggerShake(); return; }
+    setLoading(true); setError("");
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}`,
+    });
+    setLoading(false);
+    if (error) { setError(error.message); }
+    else { setMode("reset_sent"); }
+  };
+
+  return (
+    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #0a1628 0%, #0a66c2 100%)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Segoe UI', sans-serif" }}>
+      <div style={{ background: "white", borderRadius: 20, padding: "40px 36px", width: "100%", maxWidth: 400, boxShadow: "0 32px 80px rgba(0,0,0,0.3)", textAlign: "center", animation: shake ? "shake 0.5s ease" : "none" }}>
+
+        <div style={{ width: 64, height: 64, background: "#eff6ff", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", fontSize: 28 }}>
+          {mode === "reset_sent" ? "📧" : "🔐"}
+        </div>
+
+        {mode === "reset_sent" ? (
+          <>
+            <h1 style={{ margin: "0 0 10px", fontSize: 22, fontWeight: 700, color: "#0f172a" }}>Check your email!</h1>
+            <p style={{ margin: "0 0 24px", fontSize: 14, color: "#64748b", lineHeight: 1.6 }}>
+              We sent a password reset link to <strong>{email}</strong>. Click the link in the email to set a new password.
+            </p>
+            <button onClick={() => { setMode("login"); setEmail(""); setError(""); }}
+              style={{ width: "100%", padding: "12px", borderRadius: 10, border: "none", background: "#0a66c2", color: "white", fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
+              Back to Login
+            </button>
+          </>
+        ) : (
+          <>
+            <h1 style={{ margin: "0 0 6px", fontSize: 22, fontWeight: 700, color: "#0f172a" }}>Migs ATS</h1>
+            <p style={{ margin: "0 0 28px", fontSize: 14, color: "#64748b" }}>
+              {mode === "login" ? "Sign in to access the app" : "Enter your email to reset your password"}
+            </p>
+
+            <div style={{ marginBottom: 14, textAlign: "left" }}>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 4 }}>Email</label>
+              <input
+                type="email" value={email} placeholder="your@email.com"
+                onChange={(e) => { setEmail(e.target.value); setError(""); }}
+                onKeyDown={(e) => e.key === "Enter" && mode === "login" && handleLogin()}
+                style={{ width: "100%", padding: "12px 16px", border: `2px solid ${error ? "#ef4444" : "#e2e8f0"}`, borderRadius: 10, fontSize: 15, boxSizing: "border-box", outline: "none" }}
+              />
+            </div>
+
+            {mode === "login" && (
+              <div style={{ marginBottom: 6, textAlign: "left" }}>
+                <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 4 }}>Password</label>
+                <div style={{ position: "relative" }}>
+                  <input
+                    type={show ? "text" : "password"} value={password} placeholder="Enter your password"
+                    onChange={(e) => { setPassword(e.target.value); setError(""); }}
+                    onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+                    style={{ width: "100%", padding: "12px 44px 12px 16px", border: `2px solid ${error ? "#ef4444" : "#e2e8f0"}`, borderRadius: 10, fontSize: 15, boxSizing: "border-box", outline: "none" }}
+                  />
+                  <button onClick={() => setShow(!show)} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 18, color: "#94a3b8" }}>
+                    {show ? "🙈" : "👁️"}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {mode === "login" && (
+              <div style={{ textAlign: "right", marginBottom: 20 }}>
+                <button onClick={() => { setMode("forgot"); setError(""); setPassword(""); }}
+                  style={{ background: "none", border: "none", color: "#0a66c2", fontSize: 13, cursor: "pointer", fontWeight: 500 }}>
+                  Forgot password?
+                </button>
+              </div>
+            )}
+
+            {error && <p style={{ margin: "0 0 14px", fontSize: 13, color: "#ef4444", fontWeight: 500 }}>❌ {error}</p>}
+
+            <button
+              onClick={mode === "login" ? handleLogin : handleForgot}
+              disabled={loading}
+              style={{ width: "100%", padding: "12px", borderRadius: 10, border: "none", background: loading ? "#93c5fd" : "#0a66c2", color: "white", fontWeight: 700, fontSize: 15, cursor: loading ? "not-allowed" : "pointer" }}>
+              {loading ? "Please wait..." : mode === "login" ? "Sign In →" : "Send Reset Link →"}
+            </button>
+
+            {mode === "forgot" && (
+              <button onClick={() => { setMode("login"); setError(""); }}
+                style={{ marginTop: 14, background: "none", border: "none", color: "#64748b", fontSize: 13, cursor: "pointer" }}>
+                ← Back to Login
+              </button>
+            )}
+          </>
+        )}
+      </div>
+      <style>{`
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          20% { transform: translateX(-10px); }
+          40% { transform: translateX(10px); }
+          60% { transform: translateX(-8px); }
+          80% { transform: translateX(8px); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// ==========================================
+// 🔑 RESET PASSWORD SCREEN
+// ==========================================
+function ResetPasswordScreen({ onDone }) {
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [show, setShow] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  const handleReset = async () => {
+    if (!password || password.length < 6) { setError("Password must be at least 6 characters."); return; }
+    if (password !== confirm) { setError("Passwords don't match."); return; }
+    setLoading(true); setError("");
+    const { error } = await supabase.auth.updateUser({ password });
+    setLoading(false);
+    if (error) { setError(error.message); }
+    else { setSuccess(true); setTimeout(() => onDone(), 2000); }
+  };
+
+  return (
+    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #0a1628 0%, #0a66c2 100%)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Segoe UI', sans-serif" }}>
+      <div style={{ background: "white", borderRadius: 20, padding: "40px 36px", width: "100%", maxWidth: 400, boxShadow: "0 32px 80px rgba(0,0,0,0.3)", textAlign: "center" }}>
+        <div style={{ width: 64, height: 64, background: success ? "#d1fae5" : "#eff6ff", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", fontSize: 28 }}>
+          {success ? "✅" : "🔑"}
+        </div>
+        <h1 style={{ margin: "0 0 6px", fontSize: 22, fontWeight: 700, color: "#0f172a" }}>{success ? "Password Updated!" : "Set New Password"}</h1>
+        <p style={{ margin: "0 0 28px", fontSize: 14, color: "#64748b" }}>{success ? "Redirecting you to the app..." : "Choose a new password for your account"}</p>
+
+        {!success && (
+          <>
+            {[{ label: "New Password", val: password, set: setPassword }, { label: "Confirm Password", val: confirm, set: setConfirm }].map(({ label, val, set }) => (
+              <div key={label} style={{ marginBottom: 14, textAlign: "left" }}>
+                <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 4 }}>{label}</label>
+                <div style={{ position: "relative" }}>
+                  <input type={show ? "text" : "password"} value={val} placeholder="Min. 6 characters"
+                    onChange={(e) => { set(e.target.value); setError(""); }}
+                    style={{ width: "100%", padding: "12px 44px 12px 16px", border: `2px solid ${error ? "#ef4444" : "#e2e8f0"}`, borderRadius: 10, fontSize: 15, boxSizing: "border-box", outline: "none" }} />
+                  <button onClick={() => setShow(!show)} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 18, color: "#94a3b8" }}>
+                    {show ? "🙈" : "👁️"}
+                  </button>
+                </div>
+              </div>
+            ))}
+            {error && <p style={{ margin: "0 0 14px", fontSize: 13, color: "#ef4444", fontWeight: 500 }}>❌ {error}</p>}
+            <button onClick={handleReset} disabled={loading}
+              style={{ width: "100%", padding: "12px", borderRadius: 10, border: "none", background: loading ? "#93c5fd" : "#0a66c2", color: "white", fontWeight: 700, fontSize: 15, cursor: loading ? "not-allowed" : "pointer" }}>
+              {loading ? "Updating..." : "Update Password →"}
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ==========================================
+// 🏠 MAIN APP
+// ==========================================
+export default function ApplicantTracker() {
+  const [session, setSession] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [applicants, setApplicants] = useState(load);
   const [nextId, setNextId] = useState(loadId);
   const [view, setView] = useState("table");
@@ -44,102 +235,101 @@ export default function ApplicantTracker({ onLogout, onChangePassword }) {
   const [dragId, setDragId] = useState(null);
 
   useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setAuthLoading(false);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setSession(session);
+      if (event === "PASSWORD_RECOVERY") setIsResettingPassword(true);
+      else setIsResettingPassword(false);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(applicants));
       localStorage.setItem(STORAGE_ID_KEY, String(nextId));
     } catch {}
   }, [applicants, nextId]);
 
-  const flash = () => { setSaved(true); setTimeout(() => setSaved(false), 2000); };
+  if (authLoading) {
+    return (
+      <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #0a1628 0%, #0a66c2 100%)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ color: "white", fontSize: 16, fontFamily: "'Segoe UI', sans-serif" }}>Loading...</div>
+      </div>
+    );
+  }
 
+  if (isResettingPassword) return <ResetPasswordScreen onDone={() => setIsResettingPassword(false)} />;
+  if (!session) return <LoginScreen onLogin={() => {}} />;
+
+  const flash = () => { setSaved(true); setTimeout(() => setSaved(false), 2000); };
   const filtered = applicants.filter((a) => {
     const matchStage = filter === "All" || a.stage === filter;
     const matchSearch = !search || a.name.toLowerCase().includes(search.toLowerCase()) || a.position.toLowerCase().includes(search.toLowerCase()) || a.email.toLowerCase().includes(search.toLowerCase());
     return matchStage && matchSearch;
   });
-
   const counts = {};
   STAGES.forEach((s) => { counts[s] = applicants.filter((a) => a.stage === s).length; });
-
   const openAdd = () => { setForm(EMPTY_FORM); setEditingId(null); setShowForm(true); };
   const openEdit = (a) => { setForm({ ...a }); setEditingId(a.id); setShowForm(true); setDetailApplicant(null); };
-
   const handleSubmit = () => {
     if (!form.name || !form.position) return;
-    if (editingId !== null) {
-      setApplicants((prev) => prev.map((a) => a.id === editingId ? { ...form, id: editingId } : a));
-    } else {
-      setApplicants((prev) => [...prev, { ...form, id: nextId }]);
-      setNextId((n) => n + 1);
-    }
+    if (editingId !== null) { setApplicants((prev) => prev.map((a) => a.id === editingId ? { ...form, id: editingId } : a)); }
+    else { setApplicants((prev) => [...prev, { ...form, id: nextId }]); setNextId((n) => n + 1); }
     flash(); setShowForm(false);
   };
-
   const handleDelete = (id) => {
-    if (window.confirm("Remove this applicant?")) {
-      setApplicants((prev) => prev.filter((a) => a.id !== id));
-      setDetailApplicant(null); flash();
-    }
+    if (window.confirm("Remove this applicant?")) { setApplicants((prev) => prev.filter((a) => a.id !== id)); setDetailApplicant(null); flash(); }
   };
-
   const handleStageChange = (id, stage) => {
     setApplicants((prev) => prev.map((a) => a.id === id ? { ...a, stage } : a));
     if (detailApplicant?.id === id) setDetailApplicant((d) => ({ ...d, stage }));
     flash();
   };
-
-  const handleDrop = (stage) => {
-    if (dragId == null) return;
-    handleStageChange(dragId, stage);
-    setDragId(null);
-  };
-
+  const handleDrop = (stage) => { if (dragId == null) return; handleStageChange(dragId, stage); setDragId(null); };
+  const handleLogout = async () => { await supabase.auth.signOut(); };
   const initials = (name) => name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
   const avatarColor = (name) => {
     const colors = ["#3b82f6","#8b5cf6","#10b981","#f59e0b","#ef4444","#f97316","#06b6d4","#ec4899"];
     let h = 0; for (let c of name) h = (h * 31 + c.charCodeAt(0)) % colors.length;
     return colors[h];
   };
+  const userEmail = session?.user?.email || "";
+  const displayName = userEmail.split("@")[0];
 
   return (
     <div style={{ minHeight: "100vh", background: "#f1f5f9", fontFamily: "'Segoe UI', sans-serif" }}>
-
-      {/* Header */}
       <div style={{ background: "linear-gradient(135deg, #1e3a5f 0%, #0a66c2 100%)", padding: "20px 32px", color: "white" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
           <div>
-            <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>👥 Applicant Tracker</h1>
+            <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>👥 Migs ATS</h1>
             <p style={{ margin: "3px 0 0", fontSize: 13, opacity: 0.8 }}>{applicants.length} total applicants across {STAGES.length} stages</p>
           </div>
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
             {saved && <span style={{ fontSize: 12, background: "rgba(255,255,255,0.2)", padding: "5px 12px", borderRadius: 20 }}>✅ Saved</span>}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.15)", padding: "6px 14px", borderRadius: 20 }}>
+              <div style={{ width: 26, height: 26, borderRadius: "50%", background: avatarColor(displayName), display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: 700, fontSize: 11 }}>
+                {initials(displayName)}
+              </div>
+              <span style={{ fontSize: 13, fontWeight: 600 }}>Hi, {displayName}!</span>
+            </div>
             <div style={{ display: "flex", background: "rgba(255,255,255,0.15)", borderRadius: 8, padding: 3 }}>
               {["table","kanban"].map((v) => (
-                <button key={v} onClick={() => setView(v)} style={{ padding: "6px 14px", borderRadius: 6, border: "none", background: view === v ? "white" : "transparent", color: view === v ? "#0a66c2" : "white", fontWeight: 600, fontSize: 13, cursor: "pointer", textTransform: "capitalize" }}>
+                <button key={v} onClick={() => setView(v)} style={{ padding: "6px 14px", borderRadius: 6, border: "none", background: view === v ? "white" : "transparent", color: view === v ? "#0a66c2" : "white", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
                   {v === "table" ? "📋 Table" : "🗂 Kanban"}
                 </button>
               ))}
             </div>
-            <button onClick={openAdd} style={{ background: "white", color: "#0a66c2", border: "none", borderRadius: 8, padding: "9px 18px", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
-              + Add Applicant
-            </button>
-            {onChangePassword && (
-              <button onClick={onChangePassword} style={{ background: "rgba(255,255,255,0.15)", color: "white", border: "1px solid rgba(255,255,255,0.35)", borderRadius: 8, padding: "9px 14px", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
-                🔑 Password
-              </button>
-            )}
-            {onLogout && (
-              <button onClick={onLogout} style={{ background: "rgba(255,255,255,0.15)", color: "white", border: "1px solid rgba(255,255,255,0.35)", borderRadius: 8, padding: "9px 14px", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
-                Log out
-              </button>
-            )}
+            <button onClick={openAdd} style={{ background: "white", color: "#0a66c2", border: "none", borderRadius: 8, padding: "9px 18px", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>+ Add Applicant</button>
+            <button onClick={handleLogout} style={{ background: "rgba(255,255,255,0.15)", color: "white", border: "1.5px solid rgba(255,255,255,0.3)", borderRadius: 8, padding: "9px 14px", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>🔒 Sign Out</button>
           </div>
         </div>
       </div>
 
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "20px 16px" }}>
-
-        {/* Stage summary bar */}
         <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
           {[{ label: "All", count: applicants.length, color: "#0a66c2", bg: "#e7f0fb" }, ...STAGES.map((s) => ({ label: s, count: counts[s], color: STAGE_STYLES[s].badge, bg: STAGE_STYLES[s].bg }))].map(({ label, count, color, bg }) => (
             <button key={label} onClick={() => setFilter(label)} style={{ padding: "6px 14px", borderRadius: 20, border: `1.5px solid ${filter === label ? color : "#e2e8f0"}`, background: filter === label ? bg : "white", color: filter === label ? color : "#64748b", fontWeight: 600, fontSize: 12, cursor: "pointer" }}>
@@ -148,25 +338,16 @@ export default function ApplicantTracker({ onLogout, onChangePassword }) {
           ))}
         </div>
 
-        {/* Search */}
         <div style={{ marginBottom: 16, display: "flex", gap: 10 }}>
-          <input
-            placeholder="🔍 Search by name, position, or email..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{ flex: 1, padding: "10px 14px", border: "1.5px solid #e2e8f0", borderRadius: 9, fontSize: 14, background: "white", outline: "none" }}
-          />
+          <input placeholder="🔍 Search by name, position, or email..." value={search} onChange={(e) => setSearch(e.target.value)}
+            style={{ flex: 1, padding: "10px 14px", border: "1.5px solid #e2e8f0", borderRadius: 9, fontSize: 14, background: "white", outline: "none" }} />
           {search && <button onClick={() => setSearch("")} style={{ padding: "10px 14px", border: "1.5px solid #e2e8f0", borderRadius: 9, background: "white", cursor: "pointer", fontSize: 13, color: "#64748b" }}>Clear</button>}
         </div>
 
-        {/* TABLE VIEW */}
         {view === "table" && (
           <div style={{ background: "white", borderRadius: 12, border: "1px solid #e2e8f0", overflow: "auto" }}>
             {filtered.length === 0 ? (
-              <div style={{ padding: 48, textAlign: "center", color: "#94a3b8" }}>
-                <div style={{ fontSize: 40 }}>👤</div>
-                <div style={{ marginTop: 8 }}>No applicants found.</div>
-              </div>
+              <div style={{ padding: 48, textAlign: "center", color: "#94a3b8" }}><div style={{ fontSize: 40 }}>👤</div><div style={{ marginTop: 8 }}>No applicants found.</div></div>
             ) : (
               <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 800 }}>
                 <thead>
@@ -184,17 +365,13 @@ export default function ApplicantTracker({ onLogout, onChangePassword }) {
                         <td style={{ padding: "12px 14px" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                             <div style={{ width: 36, height: 36, borderRadius: "50%", background: avatarColor(a.name), display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: 700, fontSize: 13, flexShrink: 0 }}>{initials(a.name)}</div>
-                            <div>
-                              <div style={{ fontWeight: 600, fontSize: 14, color: "#1e293b" }}>{a.name}</div>
-                              <div style={{ fontSize: 12, color: "#64748b" }}>{a.email}</div>
-                            </div>
+                            <div><div style={{ fontWeight: 600, fontSize: 14, color: "#1e293b" }}>{a.name}</div><div style={{ fontSize: 12, color: "#64748b" }}>{a.email}</div></div>
                           </div>
                         </td>
                         <td style={{ padding: "12px 14px", fontSize: 13, color: "#334155" }}>{a.position}</td>
                         <td style={{ padding: "12px 14px", fontSize: 12, color: "#64748b", whiteSpace: "nowrap" }}>{a.date || "—"}</td>
                         <td style={{ padding: "12px 14px" }} onClick={(e) => e.stopPropagation()}>
-                          <select value={a.stage} onChange={(e) => handleStageChange(a.id, e.target.value)}
-                            style={{ background: s.badge, color: "white", border: "none", borderRadius: 6, padding: "4px 8px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                          <select value={a.stage} onChange={(e) => handleStageChange(a.id, e.target.value)} style={{ background: s.badge, color: "white", border: "none", borderRadius: 6, padding: "4px 8px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
                             {STAGES.map((st) => <option key={st} value={st}>{st}</option>)}
                           </select>
                         </td>
@@ -219,26 +396,19 @@ export default function ApplicantTracker({ onLogout, onChangePassword }) {
           </div>
         )}
 
-        {/* KANBAN VIEW */}
         {view === "kanban" && (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 12 }}>
             {STAGES.map((stage) => {
               const s = STAGE_STYLES[stage];
               const cards = filtered.filter((a) => a.stage === stage);
               return (
-                <div key={stage}
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={() => handleDrop(stage)}
-                  style={{ background: s.bg, border: `1.5px solid ${s.border}`, borderRadius: 12, padding: 12, minHeight: 200 }}>
+                <div key={stage} onDragOver={(e) => e.preventDefault()} onDrop={() => handleDrop(stage)} style={{ background: s.bg, border: `1.5px solid ${s.border}`, borderRadius: 12, padding: 12, minHeight: 200 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                     <span style={{ fontSize: 12, fontWeight: 700, color: s.text, textTransform: "uppercase", letterSpacing: "0.05em" }}>{stage}</span>
                     <span style={{ background: s.badge, color: "white", borderRadius: 12, padding: "2px 8px", fontSize: 11, fontWeight: 700 }}>{cards.length}</span>
                   </div>
                   {cards.map((a) => (
-                    <div key={a.id} draggable
-                      onDragStart={() => setDragId(a.id)}
-                      onClick={() => setDetailApplicant(a)}
-                      style={{ background: "white", border: `1px solid ${s.border}`, borderRadius: 9, padding: "10px 12px", marginBottom: 8, cursor: "grab", transition: "box-shadow 0.15s" }}>
+                    <div key={a.id} draggable onDragStart={() => setDragId(a.id)} onClick={() => setDetailApplicant(a)} style={{ background: "white", border: `1px solid ${s.border}`, borderRadius: 9, padding: "10px 12px", marginBottom: 8, cursor: "grab" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                         <div style={{ width: 28, height: 28, borderRadius: "50%", background: avatarColor(a.name), display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: 700, fontSize: 11, flexShrink: 0 }}>{initials(a.name)}</div>
                         <div style={{ fontWeight: 600, fontSize: 13, color: "#1e293b", lineHeight: 1.2 }}>{a.name}</div>
@@ -259,51 +429,36 @@ export default function ApplicantTracker({ onLogout, onChangePassword }) {
         </div>
       </div>
 
-      {/* DETAIL PANEL */}
       {detailApplicant && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 998 }}
-          onClick={(e) => e.target === e.currentTarget && setDetailApplicant(null)}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 998 }} onClick={(e) => e.target === e.currentTarget && setDetailApplicant(null)}>
           <div style={{ background: "white", borderRadius: 16, padding: 28, width: "100%", maxWidth: 500, boxShadow: "0 24px 64px rgba(0,0,0,0.18)", maxHeight: "90vh", overflowY: "auto" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
               <div style={{ width: 52, height: 52, borderRadius: "50%", background: avatarColor(detailApplicant.name), display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: 700, fontSize: 18 }}>{initials(detailApplicant.name)}</div>
-              <div>
-                <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "#0f172a" }}>{detailApplicant.name}</h2>
-                <p style={{ margin: 0, fontSize: 13, color: "#64748b" }}>{detailApplicant.position}</p>
-              </div>
+              <div><h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "#0f172a" }}>{detailApplicant.name}</h2><p style={{ margin: 0, fontSize: 13, color: "#64748b" }}>{detailApplicant.position}</p></div>
               <button onClick={() => setDetailApplicant(null)} style={{ marginLeft: "auto", background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "#94a3b8" }}>✕</button>
             </div>
-
-            {[
-              { label: "📧 Email", value: detailApplicant.email },
-              { label: "📱 Phone", value: detailApplicant.phone },
-              { label: "📅 Applied", value: detailApplicant.date },
-            ].map(({ label, value }) => value ? (
+            {[{ label: "📧 Email", value: detailApplicant.email }, { label: "📱 Phone", value: detailApplicant.phone }, { label: "📅 Applied", value: detailApplicant.date }].map(({ label, value }) => value ? (
               <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid #f1f5f9" }}>
                 <span style={{ fontSize: 13, color: "#64748b" }}>{label}</span>
                 <span style={{ fontSize: 13, color: "#1e293b", fontWeight: 500 }}>{value}</span>
               </div>
             ) : null)}
-
             <div style={{ display: "flex", gap: 10, margin: "14px 0" }}>
               {detailApplicant.linkedin && <a href={detailApplicant.linkedin} target="_blank" rel="noreferrer" style={{ flex: 1, textAlign: "center", padding: "9px", borderRadius: 8, background: "#e7f0fb", color: "#0a66c2", fontWeight: 600, fontSize: 13, textDecoration: "none" }}>🔗 LinkedIn</a>}
               {detailApplicant.resume && <a href={detailApplicant.resume} target="_blank" rel="noreferrer" style={{ flex: 1, textAlign: "center", padding: "9px", borderRadius: 8, background: "#f5f3ff", color: "#7c3aed", fontWeight: 600, fontSize: 13, textDecoration: "none" }}>📄 Resume</a>}
             </div>
-
             <div style={{ marginBottom: 14 }}>
               <label style={{ fontSize: 12, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Stage</label>
-              <select value={detailApplicant.stage} onChange={(e) => handleStageChange(detailApplicant.id, e.target.value)}
-                style={{ display: "block", width: "100%", marginTop: 6, padding: "9px 12px", border: "1.5px solid #e2e8f0", borderRadius: 8, fontSize: 14, background: STAGE_STYLES[detailApplicant.stage].bg }}>
+              <select value={detailApplicant.stage} onChange={(e) => handleStageChange(detailApplicant.id, e.target.value)} style={{ display: "block", width: "100%", marginTop: 6, padding: "9px 12px", border: "1.5px solid #e2e8f0", borderRadius: 8, fontSize: 14, background: STAGE_STYLES[detailApplicant.stage].bg }}>
                 {STAGES.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
-
             {detailApplicant.notes && (
               <div style={{ marginBottom: 16 }}>
                 <label style={{ fontSize: 12, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Interview Notes</label>
                 <p style={{ margin: "6px 0 0", fontSize: 14, color: "#334155", background: "#f8fafc", padding: "10px 12px", borderRadius: 8, lineHeight: 1.6 }}>{detailApplicant.notes}</p>
               </div>
             )}
-
             <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
               <button onClick={() => openEdit(detailApplicant)} style={{ flex: 1, padding: "10px", borderRadius: 8, border: "1.5px solid #e2e8f0", background: "white", cursor: "pointer", fontWeight: 600, fontSize: 14, color: "#334155" }}>✏️ Edit</button>
               <button onClick={() => handleDelete(detailApplicant.id)} style={{ flex: 1, padding: "10px", borderRadius: 8, border: "1.5px solid #fca5a5", background: "white", cursor: "pointer", fontWeight: 600, fontSize: 14, color: "#dc2626" }}>🗑 Delete</button>
@@ -312,15 +467,10 @@ export default function ApplicantTracker({ onLogout, onChangePassword }) {
         </div>
       )}
 
-      {/* FORM MODAL */}
       {showForm && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 999 }}
-          onClick={(e) => e.target === e.currentTarget && setShowForm(false)}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 999 }} onClick={(e) => e.target === e.currentTarget && setShowForm(false)}>
           <div style={{ background: "white", borderRadius: 16, padding: 28, width: "100%", maxWidth: 500, boxShadow: "0 24px 64px rgba(0,0,0,0.18)", maxHeight: "90vh", overflowY: "auto" }}>
-            <h2 style={{ margin: "0 0 20px", fontSize: 18, fontWeight: 700, color: "#0f172a" }}>
-              {editingId !== null ? "Edit Applicant" : "Add Applicant"}
-            </h2>
-
+            <h2 style={{ margin: "0 0 20px", fontSize: 18, fontWeight: 700, color: "#0f172a" }}>{editingId !== null ? "Edit Applicant" : "Add Applicant"}</h2>
             {[
               { label: "Full Name *", key: "name", type: "text", placeholder: "e.g. Maria Santos" },
               { label: "Email *", key: "email", type: "email", placeholder: "e.g. maria@email.com" },
@@ -332,27 +482,21 @@ export default function ApplicantTracker({ onLogout, onChangePassword }) {
             ].map(({ label, key, type, placeholder }) => (
               <div key={key} style={{ marginBottom: 13 }}>
                 <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 4 }}>{label}</label>
-                <input type={type} value={form[key]} placeholder={placeholder}
-                  onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
+                <input type={type} value={form[key]} placeholder={placeholder} onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
                   style={{ width: "100%", padding: "9px 12px", border: "1.5px solid #e2e8f0", borderRadius: 8, fontSize: 14, boxSizing: "border-box", outline: "none" }} />
               </div>
             ))}
-
             <div style={{ marginBottom: 13 }}>
               <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 4 }}>Stage</label>
-              <select value={form.stage} onChange={(e) => setForm((f) => ({ ...f, stage: e.target.value }))}
-                style={{ width: "100%", padding: "9px 12px", border: "1.5px solid #e2e8f0", borderRadius: 8, fontSize: 14, boxSizing: "border-box" }}>
+              <select value={form.stage} onChange={(e) => setForm((f) => ({ ...f, stage: e.target.value }))} style={{ width: "100%", padding: "9px 12px", border: "1.5px solid #e2e8f0", borderRadius: 8, fontSize: 14, boxSizing: "border-box" }}>
                 {STAGES.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
-
             <div style={{ marginBottom: 20 }}>
               <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 4 }}>Interview Notes</label>
-              <textarea value={form.notes} placeholder="Impressions, skills, follow-ups..."
-                onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+              <textarea value={form.notes} placeholder="Impressions, skills, follow-ups..." onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
                 rows={3} style={{ width: "100%", padding: "9px 12px", border: "1.5px solid #e2e8f0", borderRadius: 8, fontSize: 14, boxSizing: "border-box", resize: "vertical" }} />
             </div>
-
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
               <button onClick={() => setShowForm(false)} style={{ padding: "9px 18px", borderRadius: 8, border: "1.5px solid #e2e8f0", background: "white", cursor: "pointer", fontSize: 14, color: "#475569" }}>Cancel</button>
               <button onClick={handleSubmit} style={{ padding: "9px 18px", borderRadius: 8, border: "none", background: "#0a66c2", color: "white", cursor: "pointer", fontWeight: 700, fontSize: 14 }}>

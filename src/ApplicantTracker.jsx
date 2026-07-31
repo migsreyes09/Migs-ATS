@@ -193,6 +193,11 @@ export default function ApplicantTracker() {
   
     return () => subscription.unsubscribe();
   }, []);
+  
+  useEffect(() => {
+    if (session) fetchApplicants();
+    else setDbLoading(false);
+  }, [session]);
 
   const fetchApplicants = async () => {
     setDbLoading(true);

@@ -103,7 +103,7 @@ export default function ChangePasswordModal({ onClose, onSuccess }) {
             <button
               type="submit"
               disabled={loading}
-              style={{ padding: "9px 18px", borderRadius: 8, border: "none", background: loading ? "#94a3b8" : "#0a66c2", color: "white", cursor: loading ? "not-allowed" : "pointer", fontWeight: 700, fontSize: 14 }}
+              style={{ padding: "9px 18px", borderRadius: 8, border: "none", background: loading ? "#94a3b8" : "#E17726", color: "white", cursor: loading ? "not-allowed" : "pointer", fontWeight: 700, fontSize: 14 }}
             >
               {loading ? "Updating…" : "Update Password"}
             </button>

@@ -30,7 +30,7 @@ const FIELD_STYLE = {
 
 function FormCard({ children, required, label, hint }) {
   return (
-    <div style={{ background: "white", borderRadius: 8, border: "1px solid #e0e0e0", padding: "24px 28px", marginBottom: 16, borderLeft: "6px solid #0a66c2" }}>
+    <div style={{ background: "white", borderRadius: 8, border: "1px solid #e0e0e0", padding: "24px 28px", marginBottom: 16, borderLeft: "6px solid #E17726" }}>
       {label && (
         <label style={{ display: "block", fontSize: 15, fontWeight: 500, color: "#202124", marginBottom: 16 }}>
           {label} {required && <span style={{ color: "#d93025" }}>*</span>}
@@ -85,20 +85,20 @@ export default function ApplicationForm() {
 
   const inputStyle = (key) => ({
     ...FIELD_STYLE,
-    borderBottomColor: errors[key] ? "#d93025" : focused === key ? "#0a66c2" : "#e2e8f0",
+    borderBottomColor: errors[key] ? "#d93025" : focused === key ? "#E17726" : "#e2e8f0",
   });
 
   if (submitted) {
     return (
       <div style={{ minHeight: "100vh", background: "#f0f4f9", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Segoe UI', sans-serif" }}>
-        <div style={{ background: "white", borderRadius: 8, border: "1px solid #e0e0e0", padding: "48px 40px", maxWidth: 520, width: "100%", textAlign: "center", borderTop: "10px solid #0a66c2" }}>
+        <div style={{ background: "white", borderRadius: 8, border: "1px solid #e0e0e0", padding: "48px 40px", maxWidth: 520, width: "100%", textAlign: "center", borderTop: "10px solid #E17726" }}>
           <div style={{ fontSize: 56, marginBottom: 16 }}>🎉</div>
           <h2 style={{ fontSize: 24, fontWeight: 600, color: "#202124", margin: "0 0 12px" }}>Application Submitted!</h2>
           <p style={{ fontSize: 15, color: "#5f6368", lineHeight: 1.6, margin: "0 0 28px" }}>
             Thank you <strong>{form.name}</strong>! We've received your application for <strong>{form.position}</strong>. We'll be in touch soon.
           </p>
           <button onClick={() => { setForm({ name: "", email: "", phone: "", position: "", linkedin: "", resume: "", date: new Date().toISOString().split("T")[0] }); setSubmitted(false); }}
-            style={{ padding: "10px 24px", borderRadius: 4, border: "none", background: "#0a66c2", color: "white", fontWeight: 600, fontSize: 14, cursor: "pointer" }}>
+            style={{ padding: "10px 24px", borderRadius: 4, border: "none", background: "#E17726", color: "white", fontWeight: 600, fontSize: 14, cursor: "pointer" }}>
             Submit Another Response
           </button>
         </div>
@@ -111,7 +111,7 @@ export default function ApplicationForm() {
       <div style={{ maxWidth: 640, margin: "0 auto" }}>
 
         {/* Header Card */}
-        <div style={{ background: "white", borderRadius: 8, border: "1px solid #e0e0e0", borderTop: "10px solid #0a66c2", padding: "28px 28px 24px", marginBottom: 16 }}>
+        <div style={{ background: "white", borderRadius: 8, border: "1px solid #e0e0e0", borderTop: "10px solid #E17726", padding: "28px 28px 24px", marginBottom: 16 }}>
           <h1 style={{ margin: "0 0 8px", fontSize: 28, fontWeight: 600, color: "#202124" }}>Job Application Form</h1>
           <p style={{ margin: "0 0 16px", fontSize: 14, color: "#5f6368", lineHeight: 1.6 }}>
             Thank you for your interest! Please fill out the form below and we'll get back to you as soon as possible.
@@ -153,8 +153,8 @@ export default function ApplicationForm() {
             {POSITIONS.map((p) => (
               <label key={p} style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer", fontSize: 15, color: "#202124" }}>
                 <div onClick={() => set("position", p)}
-                  style={{ width: 20, height: 20, borderRadius: "50%", border: `2px solid ${form.position === p ? "#0a66c2" : "#80868b"}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, cursor: "pointer" }}>
-                  {form.position === p && <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#0a66c2" }} />}
+                  style={{ width: 20, height: 20, borderRadius: "50%", border: `2px solid ${form.position === p ? "#E17726" : "#80868b"}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, cursor: "pointer" }}>
+                  {form.position === p && <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#E17726" }} />}
                 </div>
                 <span onClick={() => set("position", p)}>{p}</span>
               </label>
@@ -191,11 +191,11 @@ export default function ApplicationForm() {
         {/* Submit */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
           <button onClick={handleSubmit} disabled={loading}
-            style={{ padding: "12px 28px", borderRadius: 4, border: "none", background: loading ? "#93c5fd" : "#0a66c2", color: "white", fontWeight: 600, fontSize: 15, cursor: loading ? "not-allowed" : "pointer" }}>
+            style={{ padding: "12px 28px", borderRadius: 4, border: "none", background: loading ? "#93c5fd" : "#E17726", color: "white", fontWeight: 600, fontSize: 15, cursor: loading ? "not-allowed" : "pointer" }}>
             {loading ? "Submitting..." : "Submit"}
           </button>
           <button onClick={() => setForm({ name: "", email: "", phone: "", position: "", linkedin: "", resume: "", date: new Date().toISOString().split("T")[0] })}
-            style={{ background: "none", border: "none", color: "#0a66c2", fontSize: 14, cursor: "pointer", fontWeight: 500 }}>
+            style={{ background: "none", border: "none", color: "#E17726", fontSize: 14, cursor: "pointer", fontWeight: 500 }}>
             Clear form
           </button>
         </div>

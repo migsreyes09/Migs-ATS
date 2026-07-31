@@ -1,3 +1,4 @@
+import logo from "./assets/logo.png";
 import { useEffect, useState } from "react";
 import ApplicantTracker from "./ApplicantTracker";
 import ChangePasswordModal from "./ChangePasswordModal";
@@ -59,7 +60,7 @@ export default function LoginGate() {
 
   if (status === "login") {
     return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, #1e3a5f 0%, #0a66c2 100%)", fontFamily: "'Segoe UI', sans-serif", padding: 16 }}>
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, #1e3a5f 0%, #E17726 100%)", fontFamily: "'Segoe UI', sans-serif", padding: 16 }}>
         <div style={{ background: "white", borderRadius: 16, padding: 32, width: "100%", maxWidth: 400, boxShadow: "0 24px 64px rgba(0,0,0,0.2)" }}>
           <div style={{ textAlign: "center", marginBottom: 24 }}>
             <div style={{ fontSize: 40, marginBottom: 8 }}>🔒</div>
@@ -89,7 +90,7 @@ export default function LoginGate() {
             <button
               type="submit"
               disabled={loading}
-              style={{ width: "100%", padding: "11px", borderRadius: 8, border: "none", background: loading ? "#94a3b8" : "#0a66c2", color: "white", cursor: loading ? "not-allowed" : "pointer", fontWeight: 700, fontSize: 15 }}
+              style={{ width: "100%", padding: "11px", borderRadius: 8, border: "none", background: loading ? "#94a3b8" : "#E17726", color: "white", cursor: loading ? "not-allowed" : "pointer", fontWeight: 700, fontSize: 15 }}
             >
               {loading ? "Signing in…" : "Unlock ATS"}
             </button>

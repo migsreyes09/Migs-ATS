@@ -160,18 +160,31 @@ export default function ApplicantTracker() {
   const [dragId, setDragId] = useState(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => { setSession(session); setAuthLoading(false); });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    // Catch password recovery from email link
+    const hash = window.location.hash;
+    if (hash.includes("type=recovery")) {
+      setIsResettingPassword(true);
+      setAuthLoading(false);
+      return;
+    }
+  
+    supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      if (event === "PASSWORD_RECOVERY") setIsResettingPassword(true);
-      else setIsResettingPassword(false);
+      setAuthLoading(false);
     });
+  
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setIsResettingPassword(true);
+        setSession(null);
+      } else {
+        setIsResettingPassword(false);
+        setSession(session);
+      }
+    });
+  
     return () => subscription.unsubscribe();
   }, []);
-
-  useEffect(() => {
-    if (session) fetchApplicants();
-  }, [session]);
 
   const fetchApplicants = async () => {
     setDbLoading(true);

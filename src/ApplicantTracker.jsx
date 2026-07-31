@@ -1,10 +1,13 @@
-import logo from "./assets/logo.png";
 import { useState, useEffect } from "react";
 import { supabase } from "./supabase";
+import logo from "./assets/logo.png";
+
+const ORANGE = "#E17726";
+const ORANGE_DARK = "#8a4a12";
 
 const STAGES = ["Applied", "Screening", "Interview", "Offer Sent", "Hired", "Rejected"];
 const STAGE_STYLES = {
-  "Applied":    { bg: "#eff6ff", border: "#bfdbfe", badge: "#3b82f6", text: "#1e3a8a" },
+  "Applied":    { bg: "#fff4ea", border: "#ffd4a8", badge: "#E17726", text: "#8a4a12" },
   "Screening":  { bg: "#faf5ff", border: "#e9d5ff", badge: "#8b5cf6", text: "#4c1d95" },
   "Interview":  { bg: "#fef9c3", border: "#fde68a", badge: "#f59e0b", text: "#713f12" },
   "Offer Sent": { bg: "#fff7ed", border: "#fed7aa", badge: "#f97316", text: "#7c2d12" },
@@ -28,20 +31,12 @@ function LoginScreen({ onLogin }) {
   const triggerShake = () => { setShake(true); setTimeout(() => setShake(false), 600); };
 
   const handleLogin = async () => {
-    if (!email || !password) { 
-      setError("Please enter your email and password."); 
-      triggerShake(); 
-      return; 
-    }
+    if (!email || !password) { setError("Please enter your email and password."); triggerShake(); return; }
     setLoading(true); setError("");
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
-    if (error) { 
-      setError("Incorrect email or password. Please try again."); 
-      triggerShake(); 
-    } else if (data?.session) {
-      onLogin(data.session);
-    }
+    if (error) { setError("Incorrect email or password. Please try again."); triggerShake(); }
+    else if (data?.session) onLogin(data.session);
   };
 
   const handleForgot = async () => {
@@ -54,20 +49,19 @@ function LoginScreen({ onLogin }) {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #8a4a12 0%, #E17726 100%)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Segoe UI', sans-serif" }}>
+    <div style={{ minHeight: "100vh", background: `linear-gradient(135deg, ${ORANGE_DARK} 0%, ${ORANGE} 100%)`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Segoe UI', sans-serif" }}>
       <div style={{ background: "white", borderRadius: 20, padding: "40px 36px", width: "100%", maxWidth: 400, boxShadow: "0 32px 80px rgba(0,0,0,0.3)", textAlign: "center", animation: shake ? "shake 0.5s ease" : "none" }}>
-      <img src={logo} alt="MicroSourcing" style={{ width: 140, margin: "0 auto 20px", display: "block" }} />
-          {mode === "reset_sent" ? "📧" : "🔐"}
-        </div>
+        <img src={logo} alt="MicroSourcing" style={{ width: 130, margin: "0 auto 20px", display: "block" }} />
         {mode === "reset_sent" ? (
           <>
+            <div style={{ fontSize: 40, marginBottom: 10 }}>📧</div>
             <h1 style={{ margin: "0 0 10px", fontSize: 22, fontWeight: 700, color: "#0f172a" }}>Check your email!</h1>
             <p style={{ margin: "0 0 24px", fontSize: 14, color: "#64748b", lineHeight: 1.6 }}>We sent a reset link to <strong>{email}</strong>. Click it to set a new password.</p>
-            <button onClick={() => { setMode("login"); setEmail(""); setError(""); }} style={{ width: "100%", padding: "12px", borderRadius: 10, border: "none", background: "#E17726", color: "white", fontWeight: 700, fontSize: 15, cursor: "pointer" }}>Back to Login</button>
+            <button onClick={() => { setMode("login"); setEmail(""); setError(""); }} style={{ width: "100%", padding: "12px", borderRadius: 10, border: "none", background: ORANGE, color: "white", fontWeight: 700, fontSize: 15, cursor: "pointer" }}>Back to Login</button>
           </>
         ) : (
           <>
-            <h1 style={{ margin: "0 0 6px", fontSize: 22, fontWeight: 700, color: "#0f172a" }}>Migs ATS</h1>
+            <h1 style={{ margin: "0 0 6px", fontSize: 22, fontWeight: 700, color: "#0f172a" }}>Applicant Tracking System</h1>
             <p style={{ margin: "0 0 28px", fontSize: 14, color: "#64748b" }}>{mode === "login" ? "Sign in to access the app" : "Enter your email to reset your password"}</p>
             <div style={{ marginBottom: 14, textAlign: "left" }}>
               <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 4 }}>Email</label>
@@ -84,10 +78,10 @@ function LoginScreen({ onLogin }) {
                 </div>
               </div>
             )}
-            {mode === "login" && <div style={{ textAlign: "right", marginBottom: 20 }}><button onClick={() => { setMode("forgot"); setError(""); setPassword(""); }} style={{ background: "none", border: "none", color: "#E17726", fontSize: 13, cursor: "pointer", fontWeight: 500 }}>Forgot password?</button></div>}
+            {mode === "login" && <div style={{ textAlign: "right", marginBottom: 20 }}><button onClick={() => { setMode("forgot"); setError(""); setPassword(""); }} style={{ background: "none", border: "none", color: ORANGE, fontSize: 13, cursor: "pointer", fontWeight: 500 }}>Forgot password?</button></div>}
             {error && <p style={{ margin: "0 0 14px", fontSize: 13, color: "#ef4444", fontWeight: 500 }}>❌ {error}</p>}
             <button onClick={mode === "login" ? handleLogin : handleForgot} disabled={loading}
-              style={{ width: "100%", padding: "12px", borderRadius: 10, border: "none", background: loading ? "#93c5fd" : "#E17726", color: "white", fontWeight: 700, fontSize: 15, cursor: loading ? "not-allowed" : "pointer" }}>
+              style={{ width: "100%", padding: "12px", borderRadius: 10, border: "none", background: loading ? "#f0b985" : ORANGE, color: "white", fontWeight: 700, fontSize: 15, cursor: loading ? "not-allowed" : "pointer" }}>
               {loading ? "Please wait..." : mode === "login" ? "Sign In →" : "Send Reset Link →"}
             </button>
             {mode === "forgot" && <button onClick={() => { setMode("login"); setError(""); }} style={{ marginTop: 14, background: "none", border: "none", color: "#64748b", fontSize: 13, cursor: "pointer" }}>← Back to Login</button>}
@@ -121,9 +115,10 @@ function ResetPasswordScreen({ onDone }) {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #8a4a12 0%, #E17726 100%)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Segoe UI', sans-serif" }}>
+    <div style={{ minHeight: "100vh", background: `linear-gradient(135deg, ${ORANGE_DARK} 0%, ${ORANGE} 100%)`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Segoe UI', sans-serif" }}>
       <div style={{ background: "white", borderRadius: 20, padding: "40px 36px", width: "100%", maxWidth: 400, boxShadow: "0 32px 80px rgba(0,0,0,0.3)", textAlign: "center" }}>
-        <div style={{ width: 64, height: 64, background: success ? "#d1fae5" : "#eff6ff", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", fontSize: 28 }}>{success ? "✅" : "🔑"}</div>
+        <img src={logo} alt="MicroSourcing" style={{ width: 120, margin: "0 auto 20px", display: "block" }} />
+        <div style={{ fontSize: 36, marginBottom: 8 }}>{success ? "✅" : "🔑"}</div>
         <h1 style={{ margin: "0 0 6px", fontSize: 22, fontWeight: 700, color: "#0f172a" }}>{success ? "Password Updated!" : "Set New Password"}</h1>
         <p style={{ margin: "0 0 28px", fontSize: 14, color: "#64748b" }}>{success ? "Redirecting you to the app..." : "Choose a new password for your account"}</p>
         {!success && (
@@ -139,7 +134,7 @@ function ResetPasswordScreen({ onDone }) {
               </div>
             ))}
             {error && <p style={{ margin: "0 0 14px", fontSize: 13, color: "#ef4444", fontWeight: 500 }}>❌ {error}</p>}
-            <button onClick={handleReset} disabled={loading} style={{ width: "100%", padding: "12px", borderRadius: 10, border: "none", background: loading ? "#93c5fd" : "#E17726", color: "white", fontWeight: 700, fontSize: 15, cursor: loading ? "not-allowed" : "pointer" }}>
+            <button onClick={handleReset} disabled={loading} style={{ width: "100%", padding: "12px", borderRadius: 10, border: "none", background: loading ? "#f0b985" : ORANGE, color: "white", fontWeight: 700, fontSize: 15, cursor: loading ? "not-allowed" : "pointer" }}>
               {loading ? "Updating..." : "Update Password →"}
             </button>
           </>
@@ -169,19 +164,16 @@ export default function ApplicantTracker() {
   const [dragId, setDragId] = useState(null);
 
   useEffect(() => {
-    // Catch password recovery from email link
     const hash = window.location.hash;
     if (hash.includes("type=recovery")) {
       setIsResettingPassword(true);
       setAuthLoading(false);
       return;
     }
-  
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setAuthLoading(false);
     });
-  
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "PASSWORD_RECOVERY") {
         setIsResettingPassword(true);
@@ -191,10 +183,9 @@ export default function ApplicantTracker() {
         setSession(session);
       }
     });
-  
     return () => subscription.unsubscribe();
   }, []);
-  
+
   useEffect(() => {
     if (session) fetchApplicants();
     else setDbLoading(false);
@@ -254,12 +245,12 @@ export default function ApplicantTracker() {
 
   const initials = (name) => name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
   const avatarColor = (name) => {
-    const colors = ["#3b82f6","#8b5cf6","#10b981","#f59e0b","#ef4444","#f97316","#06b6d4","#ec4899"];
+    const colors = [ORANGE, "#8b5cf6", "#10b981", "#f59e0b", "#ef4444", "#06b6d4", "#ec4899", "#3b82f6"];
     let h = 0; for (let c of name) h = (h * 31 + c.charCodeAt(0)) % colors.length;
     return colors[h];
   };
 
-  if (authLoading) return <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #8a4a12 0%, #E17726 100%)", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontFamily: "'Segoe UI', sans-serif", fontSize: 16 }}>Loading...</div>;
+  if (authLoading) return <div style={{ minHeight: "100vh", background: `linear-gradient(135deg, ${ORANGE_DARK} 0%, ${ORANGE} 100%)`, display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontFamily: "'Segoe UI', sans-serif", fontSize: 16 }}>Loading...</div>;
   if (isResettingPassword) return <ResetPasswordScreen onDone={() => setIsResettingPassword(false)} />;
   if (!session) return <LoginScreen onLogin={(newSession) => setSession(newSession)} />;
 
@@ -268,26 +259,29 @@ export default function ApplicantTracker() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#f1f5f9", fontFamily: "'Segoe UI', sans-serif" }}>
-      <div style={{ background: "linear-gradient(135deg, #8a4a12 0%, #E17726 100%)", padding: "20px 32px", color: "white" }}>
+      <div style={{ background: `linear-gradient(135deg, ${ORANGE_DARK} 0%, ${ORANGE} 100%)`, padding: "16px 32px", color: "white" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-          <div>
-            <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>👥 Migs ATS</h1>
-            <p style={{ margin: "3px 0 0", fontSize: 13, opacity: 0.8 }}>{applicants.length} total applicants · <a href="/apply" target="_blank" rel="noreferrer" style={{ color: "#93c5fd", fontWeight: 600 }}>🔗 Share Application Form</a></p>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <img src={logo} alt="MicroSourcing" style={{ height: 44, background: "white", borderRadius: 8, padding: "4px 10px" }} />
+            <div>
+              <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>Applicant Tracking System</h1>
+              <p style={{ margin: "3px 0 0", fontSize: 12, opacity: 0.85 }}>{applicants.length} total applicants · <a href="/apply" target="_blank" rel="noreferrer" style={{ color: "#ffe0c2", fontWeight: 600 }}>🔗 Share Application Form</a></p>
+            </div>
           </div>
           <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
             {saved && <span style={{ fontSize: 12, background: "rgba(255,255,255,0.2)", padding: "5px 12px", borderRadius: 20 }}>✅ Saved</span>}
             <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.15)", padding: "6px 14px", borderRadius: 20 }}>
-              <div style={{ width: 26, height: 26, borderRadius: "50%", background: avatarColor(displayName), display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: 700, fontSize: 11 }}>{initials(displayName)}</div>
+              <div style={{ width: 26, height: 26, borderRadius: "50%", background: "white", color: ORANGE, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 11 }}>{initials(displayName)}</div>
               <span style={{ fontSize: 13, fontWeight: 600 }}>Hi, {displayName}!</span>
             </div>
             <div style={{ display: "flex", background: "rgba(255,255,255,0.15)", borderRadius: 8, padding: 3 }}>
               {["table","kanban"].map((v) => (
-                <button key={v} onClick={() => setView(v)} style={{ padding: "6px 14px", borderRadius: 6, border: "none", background: view === v ? "white" : "transparent", color: view === v ? "#E17726" : "white", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
+                <button key={v} onClick={() => setView(v)} style={{ padding: "6px 14px", borderRadius: 6, border: "none", background: view === v ? "white" : "transparent", color: view === v ? ORANGE : "white", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
                   {v === "table" ? "📋 Table" : "🗂 Kanban"}
                 </button>
               ))}
             </div>
-            <button onClick={openAdd} style={{ background: "white", color: "#E17726", border: "none", borderRadius: 8, padding: "9px 18px", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>+ Add Applicant</button>
+            <button onClick={openAdd} style={{ background: "white", color: ORANGE, border: "none", borderRadius: 8, padding: "9px 18px", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>+ Add Applicant</button>
             <button onClick={handleLogout} style={{ background: "rgba(255,255,255,0.15)", color: "white", border: "1.5px solid rgba(255,255,255,0.3)", borderRadius: 8, padding: "9px 14px", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>🔒 Sign Out</button>
           </div>
         </div>
@@ -295,7 +289,7 @@ export default function ApplicantTracker() {
 
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "20px 16px" }}>
         <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
-          {[{ label: "All", count: applicants.length, color: "#E17726", bg: "#e7f0fb" }, ...STAGES.map((s) => ({ label: s, count: counts[s], color: STAGE_STYLES[s].badge, bg: STAGE_STYLES[s].bg }))].map(({ label, count, color, bg }) => (
+          {[{ label: "All", count: applicants.length, color: ORANGE, bg: "#fff4ea" }, ...STAGES.map((s) => ({ label: s, count: counts[s], color: STAGE_STYLES[s].badge, bg: STAGE_STYLES[s].bg }))].map(({ label, count, color, bg }) => (
             <button key={label} onClick={() => setFilter(label)} style={{ padding: "6px 14px", borderRadius: 20, border: `1.5px solid ${filter === label ? color : "#e2e8f0"}`, background: filter === label ? bg : "white", color: filter === label ? color : "#64748b", fontWeight: 600, fontSize: 12, cursor: "pointer" }}>
               {label} <span style={{ opacity: 0.8 }}>({count ?? applicants.length})</span>
             </button>
@@ -318,7 +312,7 @@ export default function ApplicantTracker() {
             {filtered.length === 0 ? (
               <div style={{ padding: 48, textAlign: "center", color: "#94a3b8" }}>
                 <div style={{ fontSize: 40 }}>👤</div>
-                <div style={{ marginTop: 8 }}>No applicants yet. Share the <a href="/apply" target="_blank" rel="noreferrer" style={{ color: "#E17726" }}>application form</a> to get started!</div>
+                <div style={{ marginTop: 8 }}>No applicants yet. Share the <a href="/apply" target="_blank" rel="noreferrer" style={{ color: ORANGE }}>application form</a> to get started!</div>
               </div>
             ) : (
               <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 800 }}>
@@ -348,7 +342,7 @@ export default function ApplicantTracker() {
                           </select>
                         </td>
                         <td style={{ padding: "12px 14px" }} onClick={(e) => e.stopPropagation()}>
-                          {a.linkedin ? <a href={a.linkedin} target="_blank" rel="noreferrer" style={{ color: "#E17726", fontSize: 12, fontWeight: 600, textDecoration: "none" }}>🔗 Profile</a> : <span style={{ color: "#cbd5e1", fontSize: 12 }}>—</span>}
+                          {a.linkedin ? <a href={a.linkedin} target="_blank" rel="noreferrer" style={{ color: ORANGE, fontSize: 12, fontWeight: 600, textDecoration: "none" }}>🔗 Profile</a> : <span style={{ color: "#cbd5e1", fontSize: 12 }}>—</span>}
                         </td>
                         <td style={{ padding: "12px 14px" }} onClick={(e) => e.stopPropagation()}>
                           {a.resume ? <a href={a.resume} target="_blank" rel="noreferrer" style={{ color: "#7c3aed", fontSize: 12, fontWeight: 600, textDecoration: "none" }}>📄 Resume</a> : <span style={{ color: "#cbd5e1", fontSize: 12 }}>—</span>}
@@ -413,7 +407,7 @@ export default function ApplicantTracker() {
               </div>
             ) : null)}
             <div style={{ display: "flex", gap: 10, margin: "14px 0" }}>
-              {detailApplicant.linkedin && <a href={detailApplicant.linkedin} target="_blank" rel="noreferrer" style={{ flex: 1, textAlign: "center", padding: "9px", borderRadius: 8, background: "#e7f0fb", color: "#E17726", fontWeight: 600, fontSize: 13, textDecoration: "none" }}>🔗 LinkedIn</a>}
+              {detailApplicant.linkedin && <a href={detailApplicant.linkedin} target="_blank" rel="noreferrer" style={{ flex: 1, textAlign: "center", padding: "9px", borderRadius: 8, background: "#fff4ea", color: ORANGE, fontWeight: 600, fontSize: 13, textDecoration: "none" }}>🔗 LinkedIn</a>}
               {detailApplicant.resume && <a href={detailApplicant.resume} target="_blank" rel="noreferrer" style={{ flex: 1, textAlign: "center", padding: "9px", borderRadius: 8, background: "#f5f3ff", color: "#7c3aed", fontWeight: 600, fontSize: 13, textDecoration: "none" }}>📄 Resume</a>}
             </div>
             <div style={{ marginBottom: 14 }}>
@@ -468,7 +462,7 @@ export default function ApplicantTracker() {
             </div>
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
               <button onClick={() => setShowForm(false)} style={{ padding: "9px 18px", borderRadius: 8, border: "1.5px solid #e2e8f0", background: "white", cursor: "pointer", fontSize: 14, color: "#475569" }}>Cancel</button>
-              <button onClick={handleSubmit} style={{ padding: "9px 18px", borderRadius: 8, border: "none", background: "#E17726", color: "white", cursor: "pointer", fontWeight: 700, fontSize: 14 }}>
+              <button onClick={handleSubmit} style={{ padding: "9px 18px", borderRadius: 8, border: "none", background: ORANGE, color: "white", cursor: "pointer", fontWeight: 700, fontSize: 14 }}>
                 {editingId !== null ? "Save Changes" : "Add Applicant"}
               </button>
             </div>

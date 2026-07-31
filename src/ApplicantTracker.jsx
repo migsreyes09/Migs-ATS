@@ -27,12 +27,20 @@ function LoginScreen({ onLogin }) {
   const triggerShake = () => { setShake(true); setTimeout(() => setShake(false), 600); };
 
   const handleLogin = async () => {
-    if (!email || !password) { setError("Please enter your email and password."); triggerShake(); return; }
+    if (!email || !password) { 
+      setError("Please enter your email and password."); 
+      triggerShake(); 
+      return; 
+    }
     setLoading(true); setError("");
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
-    if (error) { setError("Incorrect email or password. Please try again."); triggerShake(); }
-    else onLogin();
+    if (error) { 
+      setError("Incorrect email or password. Please try again."); 
+      triggerShake(); 
+    } else if (data?.session) {
+      onLogin(data.session);
+    }
   };
 
   const handleForgot = async () => {
@@ -247,7 +255,7 @@ export default function ApplicantTracker() {
 
   if (authLoading) return <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #0a1628 0%, #0a66c2 100%)", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontFamily: "'Segoe UI', sans-serif", fontSize: 16 }}>Loading...</div>;
   if (isResettingPassword) return <ResetPasswordScreen onDone={() => setIsResettingPassword(false)} />;
-  if (!session) return <LoginScreen onLogin={() => {}} />;
+  if (!session) return <LoginScreen onLogin={(newSession) => setSession(newSession)} />;
 
   const userEmail = session?.user?.email || "";
   const displayName = userEmail.split("@")[0];
